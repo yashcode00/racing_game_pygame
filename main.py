@@ -2,12 +2,21 @@ import pygame
 import time
 import math
 import random
+import os
+
+pygame.init()
 
 from pygame.constants import HIDDEN
 from utils import scale_image, blit_rotate_center
 
+all_vehicles=os.listdir('images')
+for val in ['crash.png', 'grass.jpg', 'main_agent.png', 'main_agent2.png','track.png','Thumbs.db']:
+    all_vehicles.remove(val)
+print(all_vehicles)
+
 GRASS = scale_image(pygame.image.load("images/grass.jpg"), 1.6)
 TRACK = scale_image(pygame.image.load("images/track.png"), 1.6)
+CRASH = scale_image(pygame.image.load("images/crash.png"),0.5)
 
 #TRACK_BORDER = scale_image(pygame.image.load("imgs/track-border.png"), 0.9)
 
@@ -24,12 +33,16 @@ FPS = 60
 
 # setting the path limits
 left_x_limit=260
-right_x_limit=WIDTH-288
+right_x_limit=WIDTH-365
 
 # class to make arbitary vehicles
 class Block:
     def __init__(self,x,y):
+        self.image=GREEN_CAR
+        self.vehicle_number=0
         self.x = x
+        self.width=GREEN_CAR.get_width()
+        self.height=GREEN_CAR.get_height()
         self.y = y
         self.speedy = 5
         self.dodged = 0
@@ -38,14 +51,18 @@ class Block:
         self.y = self.y + self.speedy
        # check boundary (block)
         if self.y > WIDTH:
-           self.y = 0 - 10
-           self.x = random.randrange(left_x_limit,right_x_limit)
-           #print(self.x,left_x_limit,right_x_limit-self.width)
-           self.dodged = self.dodged + 1
+            self.y = 0 - 10
+            self.x = random.randrange(left_x_limit,right_x_limit)
+            #print(self.x,left_x_limit,right_x_limit-self.width)
+            self.dodged = self.dodged + 1
+            self.vehicle_number=random.randint(0,len(all_vehicles)-1)
+            self.image = scale_image(pygame.image.load("images/"+all_vehicles[self.vehicle_number]), 0.55)
+            self.width=self.image.get_width()
+            self.height=self.image.get_height()
 
     def draw(self,wn):
         # pygame.draw.rect(wn, (255,0,0), [self.x, self.y, self.width, self.height])
-        wn.blit(GREEN_CAR,(self.x,self.y))
+        wn.blit(self.image,(self.x,self.y))
 
 class AbstractCar:
     def __init__(self, max_vel, rotation_vel):
@@ -69,9 +86,33 @@ class AbstractCar:
             horizontal = self.vel
             self.x += horizontal
 
+        # check boundary (west)
+        if self.x < left_x_limit:
+           self.x = left_x_limit
+       # check boundary (east)
+        if self.x > right_x_limit:
+           self.x = right_x_limit
+
     def reduce_speed(self):
         self.vel = max(self.vel - self.acceleration / 2, 0)
+        
+def crash():
+    font = pygame.font.Font('freesansbold.ttf', 32)
+    text = font.render('You crashed!',True,(0,0,0))
+    text_width = text.get_width()
+    text_height = text.get_height()
+    x = int(WIDTH/2-text_width/2)
+    y = int(HEIGHT/2-text_height/2)
+    WIN.blit(text,(x,y))
+    WIN.blit(CRASH,(0,0))
+    pygame.display.update()
+    time.sleep(2)
+    pygame.quit()
 
+def score_board(dodged):
+    font = pygame.font.Font('freesansbold.ttf', 32)
+    text = font.render('Dodged: ' + str(dodged),True,(0,0,0))
+    WIN.blit(text,(0,0)) 
 
 class PlayerCar(AbstractCar):
     IMG = RED_CAR
@@ -121,6 +162,24 @@ while run:
     if not moved:
         player_car.reduce_speed()
 
+    # Car collision with block 
+    # x and y coordinate of other side of block and player
+    other_x_block=block.x + block.width
+    other_x_player=player_car.x + RED_CAR.get_width()
+    other_y_player=player_car.y + RED_CAR.get_height()
+    other_y_block=block.y + block.height
+
+    if (player_car.x >= block.x and player_car.x  <= (other_x_block)) and player_car.y==other_y_block  :
+        crash()
+    if other_x_player >= block.x and (other_x_player<= other_x_block) and player_car.y==other_y_block :
+        crash()
+    if block.x >= player_car.x and other_x_block<=other_x_player and player_car.y==other_y_block :
+        crash()
+    if block.x < player_car.x and other_x_block>other_x_player and player_car.y==other_y_block :
+        crash()
+    
+    # Score
+    score_board(block.dodged)
     pygame.display.update()
 
 
