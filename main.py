@@ -1,6 +1,7 @@
 import pygame
 import time
 import math
+import random
 
 from pygame.constants import HIDDEN
 from utils import scale_image, blit_rotate_center
@@ -21,6 +22,30 @@ pygame.display.set_caption("Racing Game!")
 
 FPS = 60
 
+# setting the path limits
+left_x_limit=260
+right_x_limit=WIDTH-288
+
+# class to make arbitary vehicles
+class Block:
+    def __init__(self,x,y):
+        self.x = x
+        self.y = y
+        self.speedy = 5
+        self.dodged = 0
+        
+    def update(self):
+        self.y = self.y + self.speedy
+       # check boundary (block)
+        if self.y > WIDTH:
+           self.y = 0 - 10
+           self.x = random.randrange(left_x_limit,right_x_limit)
+           #print(self.x,left_x_limit,right_x_limit-self.width)
+           self.dodged = self.dodged + 1
+
+    def draw(self,wn):
+        # pygame.draw.rect(wn, (255,0,0), [self.x, self.y, self.width, self.height])
+        wn.blit(GREEN_CAR,(self.x,self.y))
 
 class AbstractCar:
     def __init__(self, max_vel, rotation_vel):
@@ -60,7 +85,7 @@ class AbstractCar:
 
 class PlayerCar(AbstractCar):
     IMG = RED_CAR
-    START_POS = (180, 200)
+    START_POS = (5*HEIGHT/6, WIDTH-450)
 
 
 def draw(win, images, player_car):
@@ -76,16 +101,22 @@ clock = pygame.time.Clock()
 images = [(GRASS, (0, 0)), (TRACK, (0,0))]
 player_car = PlayerCar(4, 4)
 
+
+block_x = random.randrange(left_x_limit, right_x_limit)
+block_y = -100
+
+block = Block(block_x,block_y)
+
 while run:
     clock.tick(FPS)
-
+    block.update()
     draw(WIN, images, player_car)
-
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
             break
 
+    block.draw(WIN)
     keys = pygame.key.get_pressed()
     moved = False
 
@@ -99,6 +130,8 @@ while run:
 
     if not moved:
         player_car.reduce_speed()
+    
+    pygame.display.update()
 
 
 pygame.quit()
