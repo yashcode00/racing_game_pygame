@@ -6,7 +6,7 @@ from pygame.constants import HIDDEN
 from utils import scale_image, blit_rotate_center
 
 GRASS = scale_image(pygame.image.load("images/grass.jpg"), 1.6)
-TRACK = scale_image(pygame.image.load("images/track_new.png"), 1.6)
+TRACK = scale_image(pygame.image.load("images/track.png"), 1.6)
 
 #TRACK_BORDER = scale_image(pygame.image.load("imgs/track-border.png"), 0.9)
 
