@@ -10,13 +10,14 @@ from pygame.constants import HIDDEN
 from utils import scale_image, blit_rotate_center
 
 all_vehicles=os.listdir('images')
-for val in ['crash.png', 'grass.jpg', 'main_agent.png', 'main_agent2.png','track.png','Thumbs.db']:
+for val in ['crash.png', 'grass.jpg', 'main_agent.png', 'main_agent2.png','track.png','Thumbs.db','speedometer.png']:
     all_vehicles.remove(val)
 print(all_vehicles)
 
 GRASS = scale_image(pygame.image.load("images/grass.jpg"), 1.6)
 TRACK = scale_image(pygame.image.load("images/track.png"), 1.6)
 CRASH = scale_image(pygame.image.load("images/crash.png"),0.5)
+SPEEDOMETER=scale_image(pygame.image.load("images/speedometer.png"), 0.45)
 
 #TRACK_BORDER = scale_image(pygame.image.load("imgs/track-border.png"), 0.9)
 
@@ -35,42 +36,13 @@ FPS = 60
 left_x_limit=260
 right_x_limit=WIDTH-365
 
-# class to make arbitary vehicles
-class Block:
-    def __init__(self,x,y):
-        self.image=GREEN_CAR
-        self.vehicle_number=0
-        self.x = x
-        self.width=GREEN_CAR.get_width()
-        self.height=GREEN_CAR.get_height()
-        self.y = y
-        self.speedy = 5
-        self.dodged = 0
-        
-    def update(self):
-        self.y = self.y + self.speedy
-       # check boundary (block)
-        if self.y > WIDTH:
-            self.y = 0 - 10
-            self.x = random.randrange(left_x_limit,right_x_limit)
-            #print(self.x,left_x_limit,right_x_limit-self.width)
-            self.dodged = self.dodged + 1
-            self.vehicle_number=random.randint(0,len(all_vehicles)-1)
-            self.image = scale_image(pygame.image.load("images/"+all_vehicles[self.vehicle_number]), 0.55)
-            self.width=self.image.get_width()
-            self.height=self.image.get_height()
-
-    def draw(self,wn):
-        # pygame.draw.rect(wn, (255,0,0), [self.x, self.y, self.width, self.height])
-        wn.blit(self.image,(self.x,self.y))
-
 class AbstractCar:
     def __init__(self, max_vel, rotation_vel):
         self.img = self.IMG
         self.max_vel = max_vel
         self.vel = 0
         self.x, self.y = self.START_POS
-        self.acceleration = 0.1
+        self.acceleration = 0.05
 
     def draw(self,win):
         win.blit(self.img,(self.x,self.y))
@@ -94,7 +66,7 @@ class AbstractCar:
            self.x = right_x_limit
 
     def reduce_speed(self):
-        self.vel = max(self.vel - self.acceleration / 2, 0)
+        self.vel = max(self.vel - self.acceleration , 0)
         
 def crash():
     font = pygame.font.Font('freesansbold.ttf', 32)
@@ -114,9 +86,49 @@ def score_board(dodged):
     text = font.render('Dodged: ' + str(dodged),True,(0,0,0))
     WIN.blit(text,(0,0)) 
 
+def speedometer(velocity):
+    font = pygame.font.Font('freesansbold.ttf', 20)
+    text = font.render(str(round(velocity,1))+"  KMPH",True,(0,0,0))
+    WIN.blit(SPEEDOMETER,(0,155))
+    WIN.blit(text,(60,145))
+    pygame.display.update()
+
 class PlayerCar(AbstractCar):
     IMG = RED_CAR
     START_POS = (5*HEIGHT/6, WIDTH-450)
+
+# class to make arbitary vehicles
+class Block():
+    def __init__(self,x,y,vel):
+        self.image=GREEN_CAR
+        self.vehicle_number=0
+        self.x = x
+        self.width=GREEN_CAR.get_width()
+        self.height=GREEN_CAR.get_height()
+        self.y = y
+        self.speedy = vel
+        self.dodged = 0
+        
+    def update(self,vel):
+        if vel>0:
+            self.speedy=vel
+        else:
+            self.speedy=3
+        self.y = self.y + self.speedy
+       # check boundary (block)
+        if self.y > WIDTH:
+            self.y = 0 - 10
+            self.x = random.randrange(left_x_limit,right_x_limit)
+            #print(self.x,left_x_limit,right_x_limit-self.width)
+            self.dodged = self.dodged + 1
+            self.vehicle_number=random.randint(0,len(all_vehicles)-1)
+            self.image = scale_image(pygame.image.load("images/"+all_vehicles[self.vehicle_number]), 0.55)
+            self.width=self.image.get_width()
+            self.height=self.image.get_height()
+
+    def draw(self,wn):
+        # pygame.draw.rect(wn, (255,0,0), [self.x, self.y, self.width, self.height])
+        wn.blit(self.image,(self.x,self.y))
 
 
 def draw(win, images, player_car):
@@ -130,17 +142,18 @@ def draw(win, images, player_car):
 run = True
 clock = pygame.time.Clock()
 images = [(GRASS, (0, 0)), (TRACK, (0,0))]
-player_car = PlayerCar(4, 4)
+player_car = PlayerCar(10, 4)
 
 
 block_x = random.randrange(left_x_limit, right_x_limit)
 block_y = -100
 
-block = Block(block_x,block_y)
+block = Block(block_x,block_y,player_car.vel)
 
 while run:
     clock.tick(FPS)
-    block.update()
+    block.update(player_car.vel)
+    
     draw(WIN, images, player_car)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -159,7 +172,7 @@ while run:
         moved = True
         player_car.move_forward()
 
-    if not moved:
+    if not moved or keys[pygame.K_DOWN] or keys[pygame.K_SPACE]:
         player_car.reduce_speed()
 
     # Car collision with block 
@@ -180,6 +193,7 @@ while run:
     
     # Score
     score_board(block.dodged)
+    speedometer(player_car.vel)
     pygame.display.update()
 
 
