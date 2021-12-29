@@ -131,17 +131,8 @@ class Block():
         wn.blit(self.image,(self.x,self.y))
 
 
-def draw(win, images, player_car):
-    for img, pos in images:
-        win.blit(img, pos)
-
-    player_car.draw(win)
-    pygame.display.update()
-
-
 run = True
 clock = pygame.time.Clock()
-images = [(GRASS, (0, 0)), (TRACK, (0,0))]
 player_car = PlayerCar(10, 4)
 
 
@@ -149,18 +140,32 @@ block_x = random.randrange(left_x_limit, right_x_limit)
 block_y = -100
 
 block = Block(block_x,block_y,player_car.vel)
+movement_in_y=0
 
 while run:
     clock.tick(FPS)
     block.update(player_car.vel)
-    
-    draw(WIN, images, player_car)
+
+    # displaying grass road and car
+    WIN.blit(GRASS,(0,0))
+
+    # to move and display the road
+    WIN.blit(TRACK,(0,movement_in_y))
+    WIN.blit(TRACK,(0,movement_in_y-TRACK.get_height()))
+    movement_in_y+=player_car.vel
+    if (TRACK.get_height()-int(movement_in_y))<=11:
+        print("Hello")
+        WIN.blit(TRACK,(0,movement_in_y-TRACK.get_height()))
+        movement_in_y=0
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
             break
 
+    player_car.draw(WIN)
     block.draw(WIN)
+
+
     keys = pygame.key.get_pressed()
     moved = False
 
@@ -174,7 +179,7 @@ while run:
 
     if not moved or keys[pygame.K_DOWN] or keys[pygame.K_SPACE]:
         player_car.reduce_speed()
-
+    
     # Car collision with block 
     # x and y coordinate of other side of block and player
     other_x_block=block.x + block.width
