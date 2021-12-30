@@ -5,6 +5,8 @@ import random
 import os
 
 pygame.init()
+# pygame.init()
+pygame.mixer.init()
 
 from pygame.constants import HIDDEN
 from utils import scale_image, blit_rotate_center
@@ -178,6 +180,9 @@ while run:
     poi=block.collison(player_car_mask,player_car.x,player_car.y)
 
     if poi != None:
+        sound=pygame.mixer.Sound("sounds/car-crash-sound-eefect.mp3")
+        sound.set_volume(0.5)
+        sound.play()
         font = pygame.font.Font('freesansbold.ttf', 32)
         text = font.render('You crashed!',True,(0,0,0))
         text_width = text.get_width()
