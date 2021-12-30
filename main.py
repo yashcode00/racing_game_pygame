@@ -44,7 +44,7 @@ class AbstractCar:
         self.max_vel = max_vel
         self.vel = 0
         self.x, self.y = self.START_POS
-        self.acceleration = 0.05
+        self.acceleration = 0.1
 
     def draw(self,win):
         win.blit(self.img,(self.x,self.y))
@@ -129,7 +129,7 @@ class Block():
 
 run = True
 clock = pygame.time.Clock()
-player_car = PlayerCar(10, 4)
+player_car = PlayerCar(20, 4)
 
 
 block_x = random.randrange(left_x_limit, right_x_limit)
@@ -143,13 +143,15 @@ while run:
     block.update(player_car.vel)
 
     # displaying grass road and car
-    WIN.blit(GRASS,(0,0))
+    WIN.blit(GRASS,(0,movement_in_y))
+    WIN.blit(GRASS,(0,movement_in_y-GRASS.get_height()))
 
     # to move and display the road
     WIN.blit(TRACK,(0,movement_in_y))
     WIN.blit(TRACK,(0,movement_in_y-TRACK.get_height()))
     movement_in_y+=player_car.vel
     if (TRACK.get_height()-int(movement_in_y))<=11:
+        WIN.blit(GRASS,(0,movement_in_y-GRASS.get_height()))
         WIN.blit(TRACK,(0,movement_in_y-TRACK.get_height()))
         movement_in_y=0
     for event in pygame.event.get():
