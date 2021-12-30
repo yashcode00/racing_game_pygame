@@ -67,19 +67,7 @@ class AbstractCar:
 
     def reduce_speed(self):
         self.vel = max(self.vel - self.acceleration , 0)
-        
-def crash():
-    font = pygame.font.Font('freesansbold.ttf', 32)
-    text = font.render('You crashed!',True,(0,0,0))
-    text_width = text.get_width()
-    text_height = text.get_height()
-    x = int(WIDTH/2-text_width/2)
-    y = int(HEIGHT/2-text_height/2)
-    WIN.blit(text,(x,y))
-    WIN.blit(CRASH,(0,0))
-    pygame.display.update()
-    time.sleep(2)
-    pygame.quit()
+    
 
 def score_board(dodged):
     font = pygame.font.Font('freesansbold.ttf', 32)
@@ -130,6 +118,12 @@ class Block():
         # pygame.draw.rect(wn, (255,0,0), [self.x, self.y, self.width, self.height])
         wn.blit(self.image,(self.x,self.y))
 
+    def collison(self,mask,x,y):
+        obstacle_mask = pygame.mask.from_surface(self.image)
+        offset = (int(self.x - x), int(self.y - y))
+        poi = mask.overlap(obstacle_mask, offset)
+        return poi
+
 
 run = True
 clock = pygame.time.Clock()
@@ -154,7 +148,6 @@ while run:
     WIN.blit(TRACK,(0,movement_in_y-TRACK.get_height()))
     movement_in_y+=player_car.vel
     if (TRACK.get_height()-int(movement_in_y))<=11:
-        print("Hello")
         WIN.blit(TRACK,(0,movement_in_y-TRACK.get_height()))
         movement_in_y=0
     for event in pygame.event.get():
@@ -181,21 +174,22 @@ while run:
         player_car.reduce_speed()
     
     # Car collision with block 
-    # x and y coordinate of other side of block and player
-    other_x_block=block.x + block.width
-    other_x_player=player_car.x + RED_CAR.get_width()
-    other_y_player=player_car.y + RED_CAR.get_height()
-    other_y_block=block.y + block.height
+    player_car_mask=pygame.mask.from_surface(player_car.img)
+    poi=block.collison(player_car_mask,player_car.x,player_car.y)
 
-    if (player_car.x >= block.x and player_car.x  <= (other_x_block)) and player_car.y==other_y_block  :
-        crash()
-    if other_x_player >= block.x and (other_x_player<= other_x_block) and player_car.y==other_y_block :
-        crash()
-    if block.x >= player_car.x and other_x_block<=other_x_player and player_car.y==other_y_block :
-        crash()
-    if block.x < player_car.x and other_x_block>other_x_player and player_car.y==other_y_block :
-        crash()
-    
+    if poi != None:
+        font = pygame.font.Font('freesansbold.ttf', 32)
+        text = font.render('You crashed!',True,(0,0,0))
+        text_width = text.get_width()
+        text_height = text.get_height()
+        x = int(WIDTH/2-text_width/2)
+        y = int(HEIGHT/2-text_height/2)
+        WIN.blit(text,(x,y))
+        WIN.blit(CRASH,(player_car.x-100,player_car.y-100))
+        pygame.display.update()
+        time.sleep(2)
+        pygame.quit()
+
     # Score
     score_board(block.dodged)
     speedometer(player_car.vel)
