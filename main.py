@@ -72,12 +72,12 @@ class AbstractCar:
     
 
 def score_board(dodged):
-    font = pygame.font.Font('freesansbold.ttf', 32)
+    font = pygame.font.SysFont("Times New Roman , Arial", 32, bold=True)
     text = font.render('Dodged: ' + str(dodged),True,(0,0,0))
     WIN.blit(text,(0,0)) 
 
 def speedometer(velocity):
-    font = pygame.font.Font('freesansbold.ttf', 20)
+    font = pygame.font.SysFont("Times New Roman , Arial", 20, bold=True)
     text = font.render(str(round(velocity,1))+"  KMPH",True,(0,0,0))
     WIN.blit(SPEEDOMETER,(0,155))
     WIN.blit(text,(60,145))
