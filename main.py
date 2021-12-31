@@ -3,6 +3,7 @@ import time
 import math
 import random
 import os
+import numpy as np
 
 pygame.init()
 # pygame.init()
@@ -124,23 +125,44 @@ class Block():
         obstacle_mask = pygame.mask.from_surface(self.image)
         offset = (int(self.x - x), int(self.y - y))
         poi = mask.overlap(obstacle_mask, offset)
-        return poi
+        if poi != None:
+            sound=pygame.mixer.Sound("sounds/car-crash-sound-eefect.mp3")
+            sound.set_volume(0.5)
+            sound.play()
+            font = pygame.font.Font('freesansbold.ttf', 32)
+            text = font.render('You crashed!',True,(0,0,0))
+            text_width = text.get_width()
+            text_height = text.get_height()
+            x = int(WIDTH/2-text_width/2)
+            y = int(HEIGHT/2-text_height/2)
+            WIN.blit(text,(x,y))
+            WIN.blit(CRASH,(player_car.x-100,player_car.y-100))
+            pygame.display.update()
+            time.sleep(2)
+            return True
+        return False
 
 
 run = True
 clock = pygame.time.Clock()
 player_car = PlayerCar(20, 4)
 
+block_x=random.choices(np.arange(left_x_limit, right_x_limit+1),k=5)
 
-block_x = random.randrange(left_x_limit, right_x_limit)
-block_y = -100
+block1_x = block_x[0]
+block1_y = -100
 
-block = Block(block_x,block_y,player_car.vel)
+block2_x =block_x[1]
+block2_y = -50
+
+block1 = Block(block1_x,block1_y,player_car.vel)
+block2=Block(block2_x,block2_y,player_car.vel)
 movement_in_y=0
-
 while run:
     clock.tick(FPS)
-    block.update(player_car.vel)
+
+    block1.update(player_car.vel+0.5)
+    block2.update(player_car.vel+0.1)
 
     # displaying grass road and car
     WIN.blit(GRASS,(0,movement_in_y))
@@ -160,7 +182,8 @@ while run:
             break
 
     player_car.draw(WIN)
-    block.draw(WIN)
+    block1.draw(WIN)
+    block2.draw(WIN)
 
 
     keys = pygame.key.get_pressed()
@@ -179,26 +202,14 @@ while run:
     
     # Car collision with block 
     player_car_mask=pygame.mask.from_surface(player_car.img)
-    poi=block.collison(player_car_mask,player_car.x,player_car.y)
-
-    if poi != None:
-        sound=pygame.mixer.Sound("sounds/car-crash-sound-eefect.mp3")
-        sound.set_volume(0.5)
-        sound.play()
-        font = pygame.font.Font('freesansbold.ttf', 32)
-        text = font.render('You crashed!',True,(0,0,0))
-        text_width = text.get_width()
-        text_height = text.get_height()
-        x = int(WIDTH/2-text_width/2)
-        y = int(HEIGHT/2-text_height/2)
-        WIN.blit(text,(x,y))
-        WIN.blit(CRASH,(player_car.x-100,player_car.y-100))
-        pygame.display.update()
-        time.sleep(2)
+    if(block1.collison(player_car_mask,player_car.x,player_car.y)):
+        pygame.quit()
+    if(block2.collison(player_car_mask,player_car.x,player_car.y)):
         pygame.quit()
 
     # Score
-    score_board(block.dodged)
+    score_board(block1.dodged)
+    score_board(block2.dodged)
     speedometer(player_car.vel)
     pygame.display.update()
 
