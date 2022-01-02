@@ -21,6 +21,8 @@ GRASS = scale_image(pygame.image.load("images/grass.jpg"), 1.6)
 TRACK = scale_image(pygame.image.load("images/track.png"), 1.6)
 CRASH = scale_image(pygame.image.load("images/crash.png"),0.5)
 SPEEDOMETER=scale_image(pygame.image.load("images/speedometer.png"), 0.45)
+sound_accelerate=pygame.mixer.Sound("sounds/car_acceleration.mp3")
+sound_accelerate.set_volume(0.5)
 
 #TRACK_BORDER = scale_image(pygame.image.load("imgs/track-border.png"), 0.9)
 
@@ -51,6 +53,7 @@ class AbstractCar:
         win.blit(self.img,(self.x,self.y))
 
     def move_forward(self):
+        sound_accelerate.play()
         self.vel = min(self.vel + self.acceleration, self.max_vel)
 
     def movement(self,left=False,right=False):
@@ -126,8 +129,9 @@ class Block():
         offset = (int(self.x - x), int(self.y - y))
         poi = mask.overlap(obstacle_mask, offset)
         if poi != None:
+            sound_accelerate.set_volume(0)
             sound=pygame.mixer.Sound("sounds/car-crash-sound-eefect.mp3")
-            sound.set_volume(0.5)
+            sound.set_volume(0.8)
             sound.play()
             font = pygame.font.Font('freesansbold.ttf', 32)
             text = font.render('You crashed!',True,(0,0,0))
