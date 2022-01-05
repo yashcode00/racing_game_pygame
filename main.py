@@ -6,7 +6,7 @@ import os
 import numpy as np
 
 pygame.init()
-# pygame.init()
+font1 = pygame.font.Font('freesansbold.ttf', 32)
 pygame.mixer.init()
 
 from pygame.constants import HIDDEN
@@ -15,14 +15,14 @@ from utils import scale_image, blit_rotate_center
 all_vehicles=os.listdir('images')
 for val in ['crash.png', 'grass.jpg', 'main_agent.png', 'main_agent2.png','track.png','Thumbs.db','speedometer.png']:
     all_vehicles.remove(val)
-print(all_vehicles)
+# print(all_vehicles)
 
 GRASS = scale_image(pygame.image.load("images/grass.jpg"), 1.6)
 TRACK = scale_image(pygame.image.load("images/track.png"), 1.6)
 CRASH = scale_image(pygame.image.load("images/crash.png"),0.5)
 SPEEDOMETER=scale_image(pygame.image.load("images/speedometer.png"), 0.45)
 sound_accelerate=pygame.mixer.Sound("sounds/car_acceleration.mp3")
-sound_accelerate.set_volume(0.5)
+sound_accelerate.set_volume(0)
 
 #TRACK_BORDER = scale_image(pygame.image.load("imgs/track-border.png"), 0.9)
 
@@ -40,6 +40,9 @@ FPS = 60
 # setting the path limits
 left_x_limit=260
 right_x_limit=WIDTH-365
+
+x_random=np.arange(left_x_limit,right_x_limit,50)
+print(x_random)
 
 class AbstractCar:
     def __init__(self, max_vel, rotation_vel):
@@ -75,14 +78,13 @@ class AbstractCar:
         self.vel = max(self.vel - self.acceleration , 0)
     
 
-def score_board(dodged):
-    font = pygame.font.SysFont("Times New Roman , Arial", 32, bold=True)
-    text = font.render('Dodged: ' + str(dodged),True,(0,0,0))
+def score_board(font1,dodged):
+    text = font1.render('Dodged: ' + str(dodged),True,(0,0,0))
     WIN.blit(text,(0,0)) 
+    pygame.display.update()
 
-def speedometer(velocity):
-    font = pygame.font.SysFont("Times New Roman , Arial", 20, bold=True)
-    text = font.render(str(round(velocity,1))+"  KMPH",True,(0,0,0))
+def speedometer(font1,velocity):
+    text = font1.render(str(round(velocity,1))+"  KMPH",True,(0,0,0))
     WIN.blit(SPEEDOMETER,(0,155))
     WIN.blit(text,(60,145))
     pygame.display.update()
@@ -101,20 +103,19 @@ class Block():
         self.height=GREEN_CAR.get_height()
         self.y = y
         self.speedy = vel
+        self.acceleration = 0.1
         self.dodged = 0
+        self.min_velocity=3
         
-    def update(self,vel):
-        if vel>0:
-            self.speedy=vel
-        else:
-            self.speedy=3
+    def update(self,vel,random_coordinate):
+        self.speedy=max(vel + self.acceleration, self.min_velocity)
         self.y = self.y + self.speedy
        # check boundary (block)
         if self.y > WIDTH:
-            self.y = 0 - 10
-            self.x = random.randrange(left_x_limit,right_x_limit)
+            self.y = 0 - 10 # choosing randomly x coordinate
+            self.x = random_coordinate
             #print(self.x,left_x_limit,right_x_limit-self.width)
-            self.dodged = self.dodged + 1
+            self.dodged = self.dodged + 2
             self.vehicle_number=random.randint(0,len(all_vehicles)-1)
             self.image = scale_image(pygame.image.load("images/"+all_vehicles[self.vehicle_number]), 0.55)
             self.width=self.image.get_width()
@@ -133,8 +134,7 @@ class Block():
             sound=pygame.mixer.Sound("sounds/car-crash-sound-eefect.mp3")
             sound.set_volume(0.8)
             sound.play()
-            font = pygame.font.Font('freesansbold.ttf', 32)
-            text = font.render('You crashed!',True,(0,0,0))
+            text = font1.render('You crashed!',True,(0,0,0))
             text_width = text.get_width()
             text_height = text.get_height()
             x = int(WIDTH/2-text_width/2)
@@ -149,7 +149,7 @@ class Block():
 
 run = True
 clock = pygame.time.Clock()
-player_car = PlayerCar(20, 4)
+player_car = PlayerCar(30, 4)
 
 block_x=random.choices(np.arange(left_x_limit, right_x_limit+1),k=5)
 
@@ -165,8 +165,13 @@ movement_in_y=0
 while run:
     clock.tick(FPS)
 
-    block1.update(player_car.vel+0.5)
-    block2.update(player_car.vel+0.1)
+    # to genrate random coordinates everytime for obstacles
+    list1=x_random.tolist()
+    list1.remove(list1[0])
+    x_random2=random.choices(list1,k=1)
+
+    block1.update(player_car.vel,x_random[0])
+    block2.update(player_car.vel,x_random2[0])
 
     # displaying grass road and car
     WIN.blit(GRASS,(0,movement_in_y))
@@ -204,7 +209,7 @@ while run:
     if not moved or keys[pygame.K_DOWN] or keys[pygame.K_SPACE]:
         player_car.reduce_speed()
     
-    # Car collision with block 
+    # Car collision with block pixel perfect coollision
     player_car_mask=pygame.mask.from_surface(player_car.img)
     if(block1.collison(player_car_mask,player_car.x,player_car.y)):
         pygame.quit()
@@ -212,9 +217,8 @@ while run:
         pygame.quit()
 
     # Score
-    score_board(block1.dodged)
-    score_board(block2.dodged)
-    speedometer(player_car.vel)
+    score_board(font1,block1.dodged+block2.dodged)
+    speedometer(font1,player_car.vel)
     pygame.display.update()
 
 
