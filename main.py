@@ -21,6 +21,7 @@ GRASS = scale_image(pygame.image.load("images/grass.jpg"), 1.6)
 TRACK = scale_image(pygame.image.load("images/track.png"), 1.6)
 CRASH = scale_image(pygame.image.load("images/crash.png"),0.5)
 SPEEDOMETER=scale_image(pygame.image.load("images/speedometer.png"), 0.45)
+INITIAL_VELOCITY = 20
 sound_accelerate=pygame.mixer.Sound("sounds/car_acceleration.mp3")
 sound_accelerate.set_volume(0)
 
@@ -151,7 +152,7 @@ class Block():
 
 run = True
 clock = pygame.time.Clock()
-player_car = PlayerCar(30, 4)
+player_car = PlayerCar(INITIAL_VELOCITY, 4)
 
 block_x=random.choices(np.arange(left_x_limit, right_x_limit+1),k=5)
 
@@ -221,7 +222,7 @@ while run:
     if collided:
         run = True
         clock = pygame.time.Clock()
-        player_car = PlayerCar(30, 4)
+        player_car = PlayerCar(INITIAL_VELOCITY, 4)
 
         block_x=random.choices(np.arange(left_x_limit, right_x_limit+1),k=5)
 
@@ -239,6 +240,7 @@ while run:
     # Score
     score_board(block1.dodged+block2.dodged)
     speedometer(player_car.vel)
+    player_car.max_vel = INITIAL_VELOCITY+((block1.dodged+block2.dodged)//50)*2
     pygame.display.update()
 
 
