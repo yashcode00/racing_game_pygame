@@ -78,12 +78,14 @@ class AbstractCar:
         self.vel = max(self.vel - self.acceleration , 0)
     
 
-def score_board(font1,dodged):
+def score_board(dodged):
+    global font1
     text = font1.render('Dodged: ' + str(dodged),True,(0,0,0))
     WIN.blit(text,(0,0)) 
     pygame.display.update()
 
-def speedometer(font1,velocity):
+def speedometer(velocity):
+    global font1
     text = font1.render(str(round(velocity,1))+"  KMPH",True,(0,0,0))
     WIN.blit(SPEEDOMETER,(0,155))
     WIN.blit(text,(60,145))
@@ -142,7 +144,7 @@ class Block():
             WIN.blit(text,(x,y))
             WIN.blit(CRASH,(player_car.x-100,player_car.y-100))
             pygame.display.update()
-            time.sleep(2)
+            time.sleep(1)
             return True
         return False
 
@@ -211,14 +213,32 @@ while run:
     
     # Car collision with block pixel perfect coollision
     player_car_mask=pygame.mask.from_surface(player_car.img)
+    collided = 0
     if(block1.collison(player_car_mask,player_car.x,player_car.y)):
-        pygame.quit()
+        collided = 1
     if(block2.collison(player_car_mask,player_car.x,player_car.y)):
-        pygame.quit()
+        collided = 1
+    if collided:
+        run = True
+        clock = pygame.time.Clock()
+        player_car = PlayerCar(30, 4)
+
+        block_x=random.choices(np.arange(left_x_limit, right_x_limit+1),k=5)
+
+        block1_x = block_x[0]
+        block1_y = -100
+
+        block2_x =block_x[1]
+        block2_y = -50
+
+        block1 = Block(block1_x,block1_y,player_car.vel)
+        block2=Block(block2_x,block2_y,player_car.vel)
+        movement_in_y=0
+
 
     # Score
-    score_board(font1,block1.dodged+block2.dodged)
-    speedometer(font1,player_car.vel)
+    score_board(block1.dodged+block2.dodged)
+    speedometer(player_car.vel)
     pygame.display.update()
 
 
