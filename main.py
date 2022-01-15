@@ -22,8 +22,6 @@ TRACK = scale_image(pygame.image.load("images/track.png"), 1.6)
 CRASH = scale_image(pygame.image.load("images/crash.png"),0.5)
 SPEEDOMETER=scale_image(pygame.image.load("images/speedometer.png"), 0.45)
 INITIAL_VELOCITY = 20
-sound_accelerate=pygame.mixer.Sound("sounds/car_acceleration.mp3")
-sound_accelerate.set_volume(0)
 
 #TRACK_BORDER = scale_image(pygame.image.load("imgs/track-border.png"), 0.9)
 
@@ -55,7 +53,7 @@ class AbstractCar:
         win.blit(self.img,(self.x,self.y))
 
     def move_forward(self):
-        sound_accelerate.play()
+        self.max_vel = INITIAL_VELOCITY+((block1.dodged+block2.dodged)//10)*2
         self.vel = min(self.vel + self.acceleration, self.max_vel)
 
     def movement(self,left=False,right=False):
@@ -131,7 +129,6 @@ class Block():
         offset = (int(self.x - x), int(self.y - y))
         poi = mask.overlap(obstacle_mask, offset)
         if poi != None:
-            sound_accelerate.set_volume(0)
             sound=pygame.mixer.Sound("sounds/car-crash-sound-eefect.mp3")
             sound.set_volume(0.8)
             sound.play()
@@ -147,7 +144,6 @@ class Block():
             return True
         return False
 
-
 run = True
 clock = pygame.time.Clock()
 player_car = PlayerCar(INITIAL_VELOCITY, 4)
@@ -161,8 +157,28 @@ block2_x =block_x[1]
 block2_y = -50
 
 block1 = Block(block1_x,block1_y,player_car.vel)
-block2 = Block(block2_x,block2_y,player_car.vel)
-movement_in_y = 0
+block2=Block(block2_x,block2_y,player_car.vel)
+movement_in_y=0
+
+def reset():
+    global run, clock, player_car, block_x, block1_x, block2_x, block1_y, block2_y, block1, block2, movement_in_y
+    run = True
+    clock = pygame.time.Clock()
+    player_car = PlayerCar(INITIAL_VELOCITY, 4)
+
+    block_x=random.choices(np.arange(left_x_limit, right_x_limit+1),k=5)
+
+    block1_x = block_x[0]
+    block1_y = -100
+
+    block2_x =block_x[1]
+    block2_y = -50
+
+    block1 = Block(block1_x,block1_y,player_car.vel)
+    block2=Block(block2_x,block2_y,player_car.vel)
+    movement_in_y=0
+
+
 while run:
     clock.tick(FPS)
 
@@ -217,27 +233,12 @@ while run:
     if(block2.collison(player_car_mask,player_car.x,player_car.y)):
         collided = 1
     if collided:
-        run = True
-        clock = pygame.time.Clock()
-        player_car = PlayerCar(INITIAL_VELOCITY, 4)
-
-        block_x=random.choices(np.arange(left_x_limit, right_x_limit+1),k=5)
-
-        block1_x = block_x[0]
-        block1_y = -100
-
-        block2_x =block_x[1]
-        block2_y = -50
-
-        block1 = Block(block1_x,block1_y,player_car.vel)
-        block2=Block(block2_x,block2_y,player_car.vel)
-        movement_in_y=0
+        reset()
 
 
     # Score
     score_board(block1.dodged+block2.dodged)
     speedometer(player_car.vel)
-    player_car.max_vel = INITIAL_VELOCITY+((block1.dodged+block2.dodged)//50)*2
     pygame.display.update()
 
 
