@@ -32,7 +32,6 @@ GREEN_CAR = scale_image(pygame.image.load("images/police.png"), 0.55)
 
 # WIDTH, HEIGHT = TRACK.get_width(), TRACK.get_height()
 WIDTH, HEIGHT = GRASS.get_width(), GRASS.get_height()
-print(WIDTH,HEIGHT)
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Racing Game!")
 
@@ -43,7 +42,6 @@ left_x_limit=260
 right_x_limit=WIDTH-365
 
 x_random=np.arange(left_x_limit,right_x_limit,50)
-print(x_random)
 
 class AbstractCar:
     def __init__(self, max_vel, rotation_vel):
@@ -163,8 +161,8 @@ block2_x =block_x[1]
 block2_y = -50
 
 block1 = Block(block1_x,block1_y,player_car.vel)
-block2=Block(block2_x,block2_y,player_car.vel)
-movement_in_y=0
+block2 = Block(block2_x,block2_y,player_car.vel)
+movement_in_y = 0
 while run:
     clock.tick(FPS)
 
@@ -205,9 +203,8 @@ while run:
         player_car.movement(left=True)
     if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
         player_car.movement(right=True)
-    if keys[pygame.K_w] or keys[pygame.K_UP]:
-        moved = True
-        player_car.move_forward()
+    moved = True
+    player_car.move_forward()
 
     if not moved or keys[pygame.K_DOWN] or keys[pygame.K_SPACE]:
         player_car.reduce_speed()
