@@ -39,47 +39,14 @@ FPS = 60
 left_x_limit=260
 right_x_limit=WIDTH-365
 
-x_random=np.arange(left_x_limit,right_x_limit,50)
-
-class AbstractCar:
-    def __init__(self, max_vel, rotation_vel):
-        self.img = self.IMG
-        self.max_vel = max_vel
-        self.vel = 0
-        self.x, self.y = self.START_POS
-        self.acceleration = 0.1
-
-    def draw(self,win):
-        win.blit(self.img,(self.x,self.y))
-
-    def move_forward(self):
-        self.max_vel = INITIAL_VELOCITY+((block1.dodged+block2.dodged)//10)*2
-        self.vel = min(self.vel + self.acceleration, self.max_vel)
-
-    def movement(self,left=False,right=False):
-        if left:
-            horizontal = self.vel
-            self.x -= horizontal
-        elif right:
-            horizontal = self.vel
-            self.x += horizontal
-
-        # check boundary (west)
-        if self.x < left_x_limit:
-           self.x = left_x_limit
-       # check boundary (east)
-        if self.x > right_x_limit:
-           self.x = right_x_limit
-
-    def reduce_speed(self):
-        self.vel = max(self.vel - self.acceleration , 0)
-    
+x_random=np.arange(left_x_limit,right_x_limit,50)    
 
 def score_board(dodged):
     global font1
     text = font1.render('Dodged: ' + str(dodged),True,(0,0,0))
     WIN.blit(text,(0,0)) 
     pygame.display.update()
+    return dodged
 
 def speedometer(velocity):
     global font1
@@ -87,10 +54,6 @@ def speedometer(velocity):
     WIN.blit(SPEEDOMETER,(0,155))
     WIN.blit(text,(60,145))
     pygame.display.update()
-
-class PlayerCar(AbstractCar):
-    IMG = RED_CAR
-    START_POS = (5*HEIGHT/6, WIDTH-450)
 
 # class to make arbitary vehicles
 class Block():
@@ -144,9 +107,66 @@ class Block():
             return True
         return False
 
+class PlayerCarAI(Block):
+    def __init__(self, max_vel, rotation_vel):
+        self.img = RED_CAR
+        self.max_vel = max_vel
+        self.vel = 0
+        self.x, self.y = (5*HEIGHT/6, WIDTH-450)
+        self.acceleration = 0.1
+        self.score=0
+        self.game_over=False
+
+    def draw(self,win):
+        win.blit(self.img,(self.x,self.y))
+
+    def move_forward(self):
+        self.max_vel = INITIAL_VELOCITY+((block1.dodged+block2.dodged)//10)*2
+        self.vel = min(self.vel + self.acceleration, self.max_vel)
+
+    def movement(self,left=False,right=False):
+        if left:
+            horizontal = self.vel
+            self.x -= horizontal
+        elif right:
+            horizontal = self.vel
+            self.x += horizontal
+
+        # check boundary (west)
+        if self.x < left_x_limit:
+           self.x = left_x_limit
+       # check boundary (east)
+        if self.x > right_x_limit:
+           self.x = right_x_limit
+
+    def player_step(self,action,block1,block2):
+        if action[1]:
+            self.movement(left=True)
+        elif action[2]:
+            self.movement(right=True)
+
+        # keep increasing speed
+        self.move_forward()
+
+        # now updating the scorecard and reward
+        reward=0
+        
+        if self.game_over:
+            reward=-10
+        else:
+            reward=10
+
+         # Score
+        self.score=score_board(block1.dodged+block2.dodged)
+        speedometer(self.vel)
+
+        print("Reward: ",reward,",Score: ",self.score,",Game_Over: ",self.game_over)
+        return reward,self.score, self.game_over
+
+
 run = True
 clock = pygame.time.Clock()
-player_car = PlayerCar(INITIAL_VELOCITY, 4)
+player_car = PlayerCarAI(INITIAL_VELOCITY, 4)
 
 block_x=random.choices(np.arange(left_x_limit, right_x_limit+1),k=5)
 
@@ -164,7 +184,7 @@ def reset():
     global run, clock, player_car, block_x, block1_x, block2_x, block1_y, block2_y, block1, block2, movement_in_y
     run = True
     clock = pygame.time.Clock()
-    player_car = PlayerCar(INITIAL_VELOCITY, 4)
+    player_car = PlayerCarAI(INITIAL_VELOCITY, 4)
 
     block_x=random.choices(np.arange(left_x_limit, right_x_limit+1),k=5)
 
@@ -180,6 +200,10 @@ def reset():
 
 
 while run:
+    indx=np.random.randint(0,3)
+    action=[0,0,0]
+    action[indx]=1
+
     clock.tick(FPS)
 
     # to genrate random coordinates everytime for obstacles
@@ -210,21 +234,13 @@ while run:
     player_car.draw(WIN)
     block1.draw(WIN)
     block2.draw(WIN)
-
-
-    keys = pygame.key.get_pressed()
-    moved = False
-
-    if keys[pygame.K_a] or keys[pygame.K_LEFT]:
-        player_car.movement(left=True)
-    if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
-        player_car.movement(right=True)
-    moved = True
-    player_car.move_forward()
-
-    if not moved or keys[pygame.K_DOWN] or keys[pygame.K_SPACE]:
-        player_car.reduce_speed()
     
+
+    player_car.player_step(action,block1,block2)
+
+    if player_car.game_over:
+        reset()
+
     # Car collision with block pixel perfect coollision
     player_car_mask=pygame.mask.from_surface(player_car.img)
     collided = 0
@@ -233,12 +249,8 @@ while run:
     if(block2.collison(player_car_mask,player_car.x,player_car.y)):
         collided = 1
     if collided:
-        reset()
+        player_car.game_over=True
 
-
-    # Score
-    score_board(block1.dodged+block2.dodged)
-    speedometer(player_car.vel)
     pygame.display.update()
 
 
