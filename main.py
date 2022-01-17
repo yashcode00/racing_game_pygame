@@ -123,7 +123,6 @@ class PlayerCarAI():
         self.move_forward()
 
         self.update()
-        self.update_ui()
 
         # now updating the scorecard and reward
         reward=0
@@ -139,8 +138,6 @@ class PlayerCarAI():
         print("Reward: ",reward,",Score: ",self.score,",Game_Over: ",self.game_over)
         return reward,self.score, self.game_over
 
-
-    
 
     # obstacles methods start->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     def update(self):
@@ -287,6 +284,7 @@ for _ in range(50000000):
     action=[0,0,0]
     action[indx]=1
     player_car.player_step(action)
+    player_car.update_ui()
 
 
 pygame.quit()
