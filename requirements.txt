@@ -1,2 +1,5 @@
 numpy==1.21.2
 pygame==2.1.0
+matplotlib
+IPython
+torch
