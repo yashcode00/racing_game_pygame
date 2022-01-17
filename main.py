@@ -73,6 +73,7 @@ class PlayerCarAI():
         self.vehicle_number=[]
 
         self.dodged = 0
+        self.rewards=[]
 
     def reset(self):
         self.__init__()
@@ -120,8 +121,8 @@ class PlayerCarAI():
         
         if self.game_over:
             reward = -10
-        else :  # give reward when dodged count increases
-            reward = 10
+        else:  # give reward when dodged count increases
+            reward = self.rewards[-1]
 
          # Score
         self.score=self.dodged
@@ -135,6 +136,7 @@ class PlayerCarAI():
 
     # obstacles methods start->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     def update(self):
+        flag=0
         self.v1=max(self.vel + self.acceleration, self.min_velocity)
         self.y1 = self.y1 + self.v1
         # for second obstacle
@@ -156,6 +158,8 @@ class PlayerCarAI():
             #print(self.x,left_x_limit,right_x_limit-self.width)
             self.dodged = self.dodged + 2
             self.image1 = scale_image(pygame.image.load("images/"+all_vehicles[self.vehicle_number[0]]), 0.55)
+            self.rewards.append(10)
+            flag=1
 
         # check boundary (block) for obstacle 2
         if self.y2 > WIDTH:
@@ -164,7 +168,11 @@ class PlayerCarAI():
             #print(self.x,left_x_limit,right_x_limit-self.width)
             self.dodged = self.dodged + 2
             self.image2 = scale_image(pygame.image.load("images/"+all_vehicles[self.vehicle_number[1]]), 0.55)
-
+            self.rewards.append(10)
+            flag=1
+        if(flag==0):
+            self.rewards.append(0)
+            
 
     def draw(self,win):
         win.blit(self.image1,(self.x1,self.y1))
