@@ -45,6 +45,7 @@ class PlayerCarAI():
     def __init__(self, max_vel=20):
         # player car attributes
         self.img = RED_CAR
+        self.initial_vel=20
         self.max_vel = max_vel
         self.vel = 0
         self.x, self.y = (5*HEIGHT/6, WIDTH-450)
@@ -73,7 +74,10 @@ class PlayerCarAI():
         self.vehicle_number=[]
 
         self.dodged = 0
-        self.rewards=[]
+        self.rewards=[0]
+
+        # surroundings movement
+        self.movement_in_y=0
 
     def reset(self):
         self.__init__()
@@ -83,7 +87,7 @@ class PlayerCarAI():
     
     # playet car methods->>>
     def move_forward(self):
-        self.max_vel = self.max_vel+(self.dodged//10)*2
+        self.max_vel = self.initial_vel+(self.dodged//30)*2
         self.vel = min(self.vel + self.acceleration, self.max_vel)
 
     def movement(self,left=False,right=False):
@@ -103,8 +107,11 @@ class PlayerCarAI():
 
     
     def player_step(self,action):
-        self.update()
-        self.score_board()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+                break
 
         self.direction=action
         if action[1]:
@@ -115,6 +122,8 @@ class PlayerCarAI():
         # keep increasing speed
         self.move_forward()
 
+        self.update()
+        self.update_ui()
 
         # now updating the scorecard and reward
         reward=0
@@ -126,7 +135,6 @@ class PlayerCarAI():
 
          # Score
         self.score=self.dodged
-        self.speedometer()
 
         print("Reward: ",reward,",Score: ",self.score,",Game_Over: ",self.game_over)
         return reward,self.score, self.game_over
@@ -170,6 +178,7 @@ class PlayerCarAI():
             self.image2 = scale_image(pygame.image.load("images/"+all_vehicles[self.vehicle_number[1]]), 0.55)
             self.rewards.append(10)
             flag=1
+            
         if(flag==0):
             self.rewards.append(0)
             
@@ -193,7 +202,7 @@ class PlayerCarAI():
         poi2 = mask.overlap(obstacle2_mask, offset2)
         if poi1 != None:
             sound=pygame.mixer.Sound("sounds/car-crash-sound-eefect.mp3")
-            sound.set_volume(0.8)
+            sound.set_volume(0.5)
             sound.play()
             text = font1.render('You crashed!',True,(0,0,0))
             text_width = text.get_width()
@@ -209,7 +218,7 @@ class PlayerCarAI():
         # checking collision for second car
         if poi2 != None:
             sound=pygame.mixer.Sound("sounds/car-crash-sound-eefect.mp3")
-            sound.set_volume(0.8)
+            sound.set_volume(0.5)
             sound.play()
             text = font1.render('You crashed!',True,(0,0,0))
             text_width = text.get_width()
@@ -228,61 +237,56 @@ class PlayerCarAI():
         global font1
         text = font1.render('Dodged: ' + str(self.dodged),True,(0,0,0))
         WIN.blit(text,(0,0)) 
-        pygame.display.update()
 
     def speedometer(self):
         global font1
         text = font1.render(str(round(self.vel,1))+"  KMPH",True,(0,0,0))
         WIN.blit(SPEEDOMETER,(0,155))
         WIN.blit(text,(60,145))
+
+    def update_ui(self):
+        clock.tick(FPS)
+
+        # displaying grass road and car
+        WIN.blit(GRASS,(0,self.movement_in_y))
+        WIN.blit(GRASS,(0,self.movement_in_y-GRASS.get_height()))
+
+        # to move and display the road
+        WIN.blit(TRACK,(0,self.movement_in_y))
+        WIN.blit(TRACK,(0,self.movement_in_y-TRACK.get_height()))
+
+        self.movement_in_y+=self.vel
+
+        if (TRACK.get_height()-int(self.movement_in_y))<=11:
+            WIN.blit(GRASS,(0,self.movement_in_y-GRASS.get_height()))
+            WIN.blit(TRACK,(0,self.movement_in_y-TRACK.get_height()))
+            self.movement_in_y=0
+
+        self.draw_player(WIN)
+        self.draw(WIN)
+        self.score_board()
+        self.speedometer()
+
+        if self.game_over:
+            self.reset()
+
+        if(player_car.collison()):
+            self.game_over=True
+
         pygame.display.update()
+        
+        
 
 
-
-run = True
 clock = pygame.time.Clock()
 player_car = PlayerCarAI()
-movement_in_y=0
 
-while run:
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            run = False
-            break
-
+for _ in range(50000000):
     indx=np.random.randint(0,3)
     action=[0,0,0]
     action[indx]=1
-
-    clock.tick(FPS)
-
-    # displaying grass road and car
-    WIN.blit(GRASS,(0,movement_in_y))
-    WIN.blit(GRASS,(0,movement_in_y-GRASS.get_height()))
-
-    # to move and display the road
-    WIN.blit(TRACK,(0,movement_in_y))
-    WIN.blit(TRACK,(0,movement_in_y-TRACK.get_height()))
-
-    movement_in_y+=player_car.vel
-    if (TRACK.get_height()-int(movement_in_y))<=11:
-        WIN.blit(GRASS,(0,movement_in_y-GRASS.get_height()))
-        WIN.blit(TRACK,(0,movement_in_y-TRACK.get_height()))
-        movement_in_y=0
-
-    player_car.draw_player(WIN)
-    player_car.draw(WIN)
-
     player_car.player_step(action)
-
-    if player_car.game_over:
-        player_car.reset()
-
-    if(player_car.collison()):
-        player_car.game_over=True
-
-    pygame.display.update()
 
 
 pygame.quit()
