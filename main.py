@@ -4,10 +4,12 @@ import math
 import random
 import os
 import numpy as np
+from collections import deque
 
 pygame.init()
 font1 = pygame.font.Font('freesansbold.ttf', 32)
 pygame.mixer.init()
+MAX_MEMORY = 100_000
 
 from pygame.constants import HIDDEN
 from utils import scale_image, blit_rotate_center
@@ -74,7 +76,8 @@ class PlayerCarAI():
         self.vehicle_number=[]
 
         self.dodged = 0
-        self.rewards=[0]
+        self.rewards=deque(maxlen=MAX_MEMORY)
+        self.rewards.append(0)
 
         # surroundings movement
         self.movement_in_y=0
@@ -110,8 +113,8 @@ class PlayerCarAI():
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                run = False
-                break
+                pygame.quit()
+                quit()
 
         self.direction=action
         if action[1]:
@@ -121,8 +124,8 @@ class PlayerCarAI():
 
         # keep increasing speed
         self.move_forward()
-
         self.update()
+        self.update_ui()
 
         # now updating the scorecard and reward
         reward=0
@@ -130,13 +133,13 @@ class PlayerCarAI():
         if self.game_over:
             reward = -10
         else:  # give reward when dodged count increases
-            reward = self.rewards[-1]
+            reward = self.rewards.pop()
 
          # Score
         self.score=self.dodged
 
-        print("Reward: ",reward,",Score: ",self.score,",Game_Over: ",self.game_over)
-        return reward,self.score, self.game_over
+        #print("Reward: ",reward,",Score: ",self.score,",Game_Over: ",self.game_over)
+        return reward, self.game_over,self.score
 
 
     # obstacles methods start->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -183,6 +186,25 @@ class PlayerCarAI():
     def draw(self,win):
         win.blit(self.image1,(self.x1,self.y1))
         win.blit(self.image2,(self.x2,self.y2))
+
+    def get_state(self,x,y):
+        obstacle1_mask = pygame.mask.from_surface(self.image1)
+        offset1 = (int(self.x1 - x), int(self.y1 - y))
+
+        obstacle2_mask = pygame.mask.from_surface(self.image2)
+        offset2 = (int(self.x2 - x), int(self.y2 - y))
+        
+        # mask of player car
+        mask=pygame.mask.from_surface(self.img)
+
+        # now finding point of intersection
+        poi1 = mask.overlap(obstacle1_mask, offset1)
+        poi2 = mask.overlap(obstacle2_mask, offset2)
+
+        if poi1!=None or poi2!=None:
+            return True
+        
+        return False
 
     def collison(self):
         obstacle1_mask = pygame.mask.from_surface(self.image1)
@@ -267,7 +289,7 @@ class PlayerCarAI():
         if self.game_over:
             self.reset()
 
-        if(player_car.collison()):
+        if(self.collison()):
             self.game_over=True
 
         pygame.display.update()
@@ -276,15 +298,14 @@ class PlayerCarAI():
 
 
 clock = pygame.time.Clock()
-player_car = PlayerCarAI()
+# player_car = PlayerCarAI()
 
 
-for _ in range(50000000):
-    indx=np.random.randint(0,3)
-    action=[0,0,0]
-    action[indx]=1
-    player_car.player_step(action)
-    player_car.update_ui()
+# for _ in range(50000000):
+#     indx=np.random.randint(0,3)
+#     action=[0,0,0]
+#     action[indx]=1
+#     player_car.player_step(action)
 
 
-pygame.quit()
+#pygame.quit()

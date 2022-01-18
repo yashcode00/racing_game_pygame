@@ -17,14 +17,16 @@ class Agent:
         self.epsilon = 0 # randomness
         self.gamma = 0.9 # discount rate
         self.memory = deque(maxlen=MAX_MEMORY) # popleft()
-        self.model = Linear_QNet(6, 256, 3)
+        self.model = Linear_QNet(8, 256, 3)
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
 
 
     def get_state(self, game):
-        point_l = (game.x, game.y)
-        point_r = (game.x+40, game.y)
-        point_u = (game.x+20, game.y)
+        point_u = (game.x, game.y-199)
+        point_l = (game.x-100, game.y)
+        point_r = (game.x+100, game.y)
+        point_ul=(game.x-100,game.y-199)
+        point_ur=(game.x+100,game.y-199)
         
         dir_l = game.direction == [0,1,0]
         dir_r = game.direction == [0,0,1]
@@ -32,13 +34,19 @@ class Agent:
 
         state = [
             # Danger straight
-            (dir_u and game.is_collision(point_u)),
+            (dir_u and game.get_state(*point_u)),
 
             # Danger right
-            (dir_r and game.is_collision(point_r)),
+            (dir_r and game.get_state(*point_r)),
 
             # Danger left 
-            (dir_l and game.is_collision(point_l)),
+            (dir_l and game.get_state(*point_l)),
+
+            # Danger upleft
+            (dir_l and game.get_state(*point_ul)),
+
+            # Danger upright
+            (dir_r and game.get_state(*point_ur)),
             
             # Move direction
             dir_l,
@@ -87,7 +95,7 @@ def train():
     total_score = 0
     record = 0
     agent = Agent()
-    game = SnakeGameAI()
+    game = PlayerCarAI()
     while True:
         # get old state
         state_old = agent.get_state(game)
@@ -96,7 +104,7 @@ def train():
         final_move = agent.get_action(state_old)
 
         # perform move and get new state
-        reward, done, score = game.play_step(final_move)
+        reward, done, score = game.player_step(final_move)
         state_new = agent.get_state(game)
 
         # train short memory
