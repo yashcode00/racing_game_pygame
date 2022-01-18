@@ -58,12 +58,14 @@ class PlayerCarAI():
 
         # 2 obstacles -> attributes start
         x_random=np.arange(left_x_limit,right_x_limit,50)
-        list1=x_random.tolist()
-        list1.remove(list1[0])
-        x_random2=random.choices(list1,k=1)
+        # list1=x_random.tolist()
+        # list1.remove(list1[0])
+        # x_random2=random.choices(list1,k=1)
+        x_choices = set(x_random)
+        x_blocks = random.sample(x_choices, 2)
 
-        self.x1=x_random[0]
-        self.x2=x_random2[0]
+        self.x1=x_blocks[0]
+        self.x2=x_blocks[1]
         self.y1=-100
         self.y2=-120
         self.v1=3
@@ -152,17 +154,23 @@ class PlayerCarAI():
         self.y2 = self.y2 + self.v2
 
         # choosing random coordinate and random cars
-        x_random=np.arange(left_x_limit,right_x_limit,80)
-        list1=x_random.tolist()
-        list1.remove(list1[0])
-        x_random2=random.choices(list1,k=1)
+        x_random=np.arange(left_x_limit,right_x_limit,50)
+        # list1=x_random.tolist()
+        # list1.remove(list1[0])
+        # x_random2=random.choices(list1,k=1)
+        x_choices = set(x_random)
+        x_blocks = random.sample(x_choices, 2)
 
         self.vehicle_number=random.sample(range(0,len(all_vehicles)-1),k=2)
 
        # check boundary (block) for obstacle 1
         if self.y1 > WIDTH:
             self.y1 = 0 - 10 # choosing randomly x coordinate
-            self.x1 = x_random[0]
+            if self.x2 == x_blocks[0]:
+                possible_choices = [v for v in x_random if v != x_blocks[0]]
+                x_blocks[0] = random.choice(possible_choices)
+
+            self.x1 = x_blocks[0]
             #print(self.x,left_x_limit,right_x_limit-self.width)
             self.dodged = self.dodged + 2
             self.image1 = scale_image(pygame.image.load("images/"+all_vehicles[self.vehicle_number[0]]), 0.55)
@@ -172,7 +180,10 @@ class PlayerCarAI():
         # check boundary (block) for obstacle 2
         if self.y2 > WIDTH:
             self.y2 = 0 - 20 # choosing randomly x coordinate
-            self.x2 = x_random2[0]
+            if self.x1 == x_blocks[1]:
+                possible_choices = [v for v in x_random if v != x_blocks[1]]
+                x_blocks[1] = random.choice(possible_choices)
+            self.x2 = x_blocks[1]
             #print(self.x,left_x_limit,right_x_limit-self.width)
             self.dodged = self.dodged + 2
             self.image2 = scale_image(pygame.image.load("images/"+all_vehicles[self.vehicle_number[1]]), 0.55)
