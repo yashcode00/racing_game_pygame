@@ -2,7 +2,7 @@ import torch
 import random
 import numpy as np
 from collections import deque
-from main import PlayerCarAI
+from main import PlayerCarAI, left_x_limit, right_x_limit
 from model import Linear_QNet, QTrainer
 from plot_it import plot
 
@@ -17,7 +17,7 @@ class Agent:
         self.epsilon = 0 # randomness
         self.gamma = 0.9 # discount rate
         self.memory = deque(maxlen=MAX_MEMORY) # popleft()
-        self.model = Linear_QNet(8, 256, 3)
+        self.model = Linear_QNet(10, 256, 3)
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
 
 
@@ -27,6 +27,8 @@ class Agent:
         point_r = (game.x+100, game.y)
         point_ul=(game.x-100,game.y-199)
         point_ur=(game.x+100,game.y-199)
+        point_bl=(left_x_limit,game.y)
+        point_br=(right_x_limit,game.y)
         
         dir_l = game.direction == [0,1,0]
         dir_r = game.direction == [0,0,1]
@@ -47,6 +49,12 @@ class Agent:
 
             # Danger upright
             (dir_r and game.get_state(*point_ur)),
+
+            # Danger border right
+            (dir_r and game.get_state(*point_br)),
+
+            # Danger border left
+            (dir_l and game.get_state(*point_bl)),
             
             # Move direction
             dir_l,
