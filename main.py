@@ -55,8 +55,7 @@ class PlayerCarAI():
         self.score=0
         self.game_over=False
         self.direction=[0,0,0]
-        self.pts=[(564.1666666666666, 479.0), (614, 492.3974596215561), (614, 529.0), (614, 579.0), (614, 629.0), (614, 665.6025403784439), (564.1666666666666, 679.0), (514.1666666666666, 665.6025403784439), (477.5641262882228, 629.0), (464.16666666666663, 579.0), (477.5641262882228, 529.0), (514.1666666666666, 492.39745962155615)]
-
+       
         # 2 obstacles -> attributes start
         x_random=np.arange(left_x_limit,right_x_limit,50)
         # list1=x_random.tolist()
@@ -113,38 +112,6 @@ class PlayerCarAI():
 
     
     def player_step(self,action):
-
-        # center = self.img.get_rect().center
-        center = (self.x + 20 ,self.y + 50)
-        angle = 0
-        radius = int(WIDTH/3)
-
-        pts = []
-        for i in range(int(360/30)):
-            vec = pygame.math.Vector2(0, -radius).rotate(angle)
-            pt_x, pt_y = center[0] + vec.x, center[1] + vec.y
-
-            if (pt_x > right_x_limit):
-                pt_x = right_x_limit
-            elif(pt_x < left_x_limit):
-                pt_x = left_x_limit
-            
-            pts.append((pt_x,pt_y))
-            angle += 30     
-            if angle >= 360:
-                angle = 0
-
-        #print("*******",len(pts))
-
-        # for pt_x,pt_y in pts:
-        #     pygame.draw.circle(WIN, (0, 0, 0), center, radius, 2)
-        #     pygame.draw.line(WIN, (0, 0, 255), center, (pt_x, pt_y), 2)
-        #     pygame.draw.line(WIN, (0, 0, 255), center, (center[0], center[1]-radius), 2)
-        #     pygame.display.update()
-            
-        # print(pts)
-        #self.pts = pts
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -264,7 +231,7 @@ class PlayerCarAI():
         poi2 = mask.overlap(obstacle2_mask, offset2)
         if poi1 != None:
             sound=pygame.mixer.Sound("sounds/car-crash-sound-eefect.mp3")
-            sound.set_volume(0.5)
+            sound.set_volume(0.1)
             sound.play()
             text = font1.render('You crashed!',True,(0,0,0))
             text_width = text.get_width()
@@ -280,7 +247,7 @@ class PlayerCarAI():
         # checking collision for second car
         if poi2 != None:
             sound=pygame.mixer.Sound("sounds/car-crash-sound-eefect.mp3")
-            sound.set_volume(0.5)
+            sound.set_volume(0.1)
             sound.play()
             text = font1.render('You crashed!',True,(0,0,0))
             text_width = text.get_width()
