@@ -1,3 +1,4 @@
+from operator import and_
 import torch
 import random
 import numpy as np
@@ -12,12 +13,12 @@ LR = 0.01
 
 class Agent:
 
-    def __init__(self):
+    def __init__(self, game):
         self.n_games = 0
         self.epsilon = 0 # randomness
         self.gamma = 0.9 # discount rate
         self.memory = deque(maxlen=MAX_MEMORY) # popleft()
-        self.model = Linear_QNet(15, 256, 3)
+        self.model = Linear_QNet(3+int(360/game.angle), 256, 3)
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
 
 
@@ -28,6 +29,7 @@ class Agent:
 
         state = [
             # Move direction
+
             dir_l,
             dir_r,
             dir_u,
@@ -133,8 +135,8 @@ def train():
     plot_mean_scores = []
     total_score = 0
     record = 0
-    agent = Agent()
     game = PlayerCarAI()
+    agent = Agent(game)
     while True:
         # get old state
         state_old = agent.get_state(game)
