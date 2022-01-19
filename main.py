@@ -44,7 +44,7 @@ right_x_limit=WIDTH-365
 x_random=np.arange(left_x_limit,right_x_limit,50)    
 
 class PlayerCarAI():
-    def __init__(self, max_vel=10):
+    def __init__(self, max_vel=10, angle_deg = 18):
         # player car attributes
         self.img = RED_CAR
         self.initial_vel=10
@@ -55,7 +55,28 @@ class PlayerCarAI():
         self.score=0
         self.game_over=False
         self.direction=[0,0,0]
-        self.pts=[(564.1666666666666, 479.0), (614, 492.3974596215561), (614, 529.0), (614, 579.0), (614, 629.0), (614, 665.6025403784439), (564.1666666666666, 679.0), (514.1666666666666, 665.6025403784439), (477.5641262882228, 629.0), (464.16666666666663, 579.0), (477.5641262882228, 529.0), (514.1666666666666, 492.39745962155615)]
+        self.angle = angle_deg
+
+        center = (self.x + 20 ,self.y + 50)
+        angle = 0
+        radius = int(WIDTH/3)
+        
+        pts = []
+        for i in range(int(360/self.angle)):
+            vec = pygame.math.Vector2(0, -radius).rotate(angle)
+            pt_x, pt_y = center[0] + vec.x, center[1] + vec.y
+
+            if (pt_x > right_x_limit):
+                pt_x = right_x_limit
+            elif(pt_x < left_x_limit):
+                pt_x = left_x_limit
+            
+            pts.append((pt_x,pt_y))
+            angle += self.angle     
+            if angle >= 360:
+                angle = 0
+
+        self.pts=pts
 
         # 2 obstacles -> attributes start
         x_random=np.arange(left_x_limit,right_x_limit,50)
@@ -120,7 +141,7 @@ class PlayerCarAI():
         radius = int(WIDTH/3)
 
         pts = []
-        for i in range(int(360/30)):
+        for i in range(int(360/self.angle)):
             vec = pygame.math.Vector2(0, -radius).rotate(angle)
             pt_x, pt_y = center[0] + vec.x, center[1] + vec.y
 
@@ -130,10 +151,12 @@ class PlayerCarAI():
                 pt_x = left_x_limit
             
             pts.append((pt_x,pt_y))
-            angle += 30     
+            angle += self.angle     
             if angle >= 360:
                 angle = 0
 
+        self.pts = pts
+        
         #print("*******",len(pts))
 
         # for pt_x,pt_y in pts:
@@ -143,8 +166,7 @@ class PlayerCarAI():
         #     pygame.display.update()
             
         # print(pts)
-        #self.pts = pts
-
+        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
