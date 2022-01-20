@@ -18,7 +18,7 @@ class Agent:
         self.epsilon = 0 # randomness
         self.gamma = 0.9 # discount rate
         self.memory = deque(maxlen=MAX_MEMORY) # popleft()
-        self.model = Linear_QNet(163, 256, 3)
+        self.model = Linear_QNet(8, 256, 3)
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
 
 
@@ -35,8 +35,8 @@ class Agent:
             dir_u,
             ]
 
-        pt_x=np.linspace(left_x_limit,right_x_limit+1,8)
-        pt_y=np.linspace(0,HEIGHT-50,20)
+        pt_x=np.linspace(left_x_limit,right_x_limit+1,5)
+        pt_y=np.linspace(0,HEIGHT/2,1)
         mesh=np.array(np.meshgrid(pt_x,pt_y)).T.reshape(-1,2)
         
         for pts in mesh:

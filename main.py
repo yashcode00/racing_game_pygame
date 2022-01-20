@@ -118,9 +118,9 @@ class PlayerCarAI():
                 quit()
 
         self.direction=action
-        if action[1]:
+        if action[1]==1:
             self.movement(left=True)
-        elif action[2]:
+        elif action[2]==1:
             self.movement(right=True)
 
         # keep increasing speed
@@ -173,7 +173,7 @@ class PlayerCarAI():
             #print(self.x,left_x_limit,right_x_limit-self.width)
             self.dodged = self.dodged + 2
             self.image1 = scale_image(pygame.image.load("images/"+all_vehicles[self.vehicle_number[0]]), 0.55)
-            self.rewards.append(10)
+            self.rewards.append(20)
             flag=1
 
         # check boundary (block) for obstacle 2
@@ -186,7 +186,7 @@ class PlayerCarAI():
             #print(self.x,left_x_limit,right_x_limit-self.width)
             self.dodged = self.dodged + 2
             self.image2 = scale_image(pygame.image.load("images/"+all_vehicles[self.vehicle_number[1]]), 0.55)
-            self.rewards.append(10)
+            self.rewards.append(20)
             flag=1
             
         if(flag==0):
@@ -230,9 +230,9 @@ class PlayerCarAI():
         poi1 = mask.overlap(obstacle1_mask, offset1)
         poi2 = mask.overlap(obstacle2_mask, offset2)
         if poi1 != None:
-            sound=pygame.mixer.Sound("sounds/car-crash-sound-eefect.mp3")
-            sound.set_volume(0.1)
-            sound.play()
+            # sound=pygame.mixer.Sound("sounds/car-crash-sound-eefect.mp3")
+            # sound.set_volume(0.1)
+            # sound.play()
             text = font1.render('You crashed!',True,(0,0,0))
             text_width = text.get_width()
             text_height = text.get_height()
@@ -246,9 +246,9 @@ class PlayerCarAI():
 
         # checking collision for second car
         if poi2 != None:
-            sound=pygame.mixer.Sound("sounds/car-crash-sound-eefect.mp3")
-            sound.set_volume(0.1)
-            sound.play()
+            # sound=pygame.mixer.Sound("sounds/car-crash-sound-eefect.mp3")
+            # sound.set_volume(0.1)
+            # sound.play()
             text = font1.render('You crashed!',True,(0,0,0))
             text_width = text.get_width()
             text_height = text.get_height()
