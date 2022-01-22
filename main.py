@@ -5,6 +5,9 @@ import random
 import os
 import numpy as np
 from collections import deque
+from PIL import Image
+import cv2
+from io import BytesIO
 
 pygame.init()
 font1 = pygame.font.Font('freesansbold.ttf', 32)
@@ -12,7 +15,11 @@ pygame.mixer.init()
 MAX_MEMORY = 100_000
 
 from pygame.constants import HIDDEN
-from utils import scale_image, blit_rotate_center
+
+def scale_image(img, factor):
+    size = round(img.get_width() * factor), round(img.get_height() * factor)
+    return pygame.transform.scale(img, size)
+
 
 all_vehicles=os.listdir('images')
 for val in ['crash.png', 'grass.jpg', 'main_agent.png', 'main_agent2.png','track.png','Thumbs.db','speedometer.png']:
@@ -55,6 +62,7 @@ class PlayerCarAI():
         self.score=0
         self.game_over=False
         self.direction=[0,0,0]
+        self.rect = pygame.Rect(left_x_limit-10, 0, right_x_limit-left_x_limit+70,HEIGHT)
        
         # 2 obstacles -> attributes start
         x_random=np.arange(left_x_limit,right_x_limit,50)
@@ -83,6 +91,7 @@ class PlayerCarAI():
 
         # surroundings movement
         self.movement_in_y=0
+        self.state=np.zeros(4096)
 
     def reset(self):
         self.__init__()
@@ -116,6 +125,17 @@ class PlayerCarAI():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
+        
+        sub = WIN.subsurface(self.rect)
+        self.state= pygame.image.tostring(sub, 'RGB')
+        self.state=pygame.image.fromstring(self.state,(right_x_limit-left_x_limit+70,HEIGHT),'RGB')
+        self.state=pygame.surfarray.array3d(self.state)
+        #pygame.image.save(sub,"State/state.png")
+        self.state=cv2.cvtColor(self.state, cv2.COLOR_BGR2GRAY)
+        #print(self.state.shape)
+        self.state=cv2.resize(self.state, (64,64))
+        self.state=self.state.flatten()/255
+        #print(self.state.shape)
 
         self.direction=action
         if action[1]==1:
@@ -173,7 +193,7 @@ class PlayerCarAI():
             #print(self.x,left_x_limit,right_x_limit-self.width)
             self.dodged = self.dodged + 2
             self.image1 = scale_image(pygame.image.load("images/"+all_vehicles[self.vehicle_number[0]]), 0.55)
-            self.rewards.append(20)
+            self.rewards.append(10)
             flag=1
 
         # check boundary (block) for obstacle 2
@@ -186,7 +206,7 @@ class PlayerCarAI():
             #print(self.x,left_x_limit,right_x_limit-self.width)
             self.dodged = self.dodged + 2
             self.image2 = scale_image(pygame.image.load("images/"+all_vehicles[self.vehicle_number[1]]), 0.55)
-            self.rewards.append(20)
+            self.rewards.append(10)
             flag=1
             
         if(flag==0):
@@ -240,8 +260,8 @@ class PlayerCarAI():
             y = int(HEIGHT/2-text_height/2)
             WIN.blit(text,(x,y))
             WIN.blit(CRASH,(self.x-100,self.y-100))
-            pygame.display.update()
-            time.sleep(1)
+            #pygame.display.update()
+            #time.sleep(1)
             return True
 
         # checking collision for second car
@@ -256,8 +276,8 @@ class PlayerCarAI():
             y = int(HEIGHT/2-text_height/2)
             WIN.blit(text,(x,y))
             WIN.blit(CRASH,(self.x-100,self.y-100))
-            pygame.display.update()
-            time.sleep(1)
+            # pygame.display.update()
+            # time.sleep(1)
             return True
         
         return False

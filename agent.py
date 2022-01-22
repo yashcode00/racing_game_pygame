@@ -6,6 +6,8 @@ from collections import deque
 from main import HEIGHT, WIDTH, PlayerCarAI, left_x_limit, right_x_limit
 from model import Linear_QNet, QTrainer
 from plot_it import plot
+import torchvision.transforms as tt
+from PIL import Image
 
 MAX_MEMORY = 100_000
 BATCH_SIZE = 1000
@@ -18,41 +20,31 @@ class Agent:
         self.epsilon = 0 # randomness
         self.gamma = 0.9 # discount rate
         self.memory = deque(maxlen=MAX_MEMORY) # popleft()
-        self.model = Linear_QNet(8, 256, 3)
+        self.model = Linear_QNet(4096, 256, 3)
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
 
 
     def get_state(self, game):
 
-        dir_l = game.direction == [0,1,0]
-        dir_r = game.direction == [0,0,1]
-        dir_u = game.direction == [1,0,0]
+        # dir_l = game.direction == [0,1,0]
+        # dir_r = game.direction == [0,0,1]
+        # dir_u = game.direction == [1,0,0]
 
-        state = [
-            # Move direction
-            dir_l,
-            dir_r,
-            dir_u,
-            ]
+        # state_img=Image.open("State/state.png").convert('RGB')
+        # state_img=transforms_test(state_img)
+        # print(state_img.shape)
 
-        pt_x=np.linspace(left_x_limit,right_x_limit+1,5)
-        pt_y=np.linspace(0,HEIGHT/2,1)
-        mesh=np.array(np.meshgrid(pt_x,pt_y)).T.reshape(-1,2)
-        
-        for pts in mesh:
-            x,y=pts[0],pts[1]
-            # point to the right
-            if x>game.x+50:
-                state.append(dir_r and game.get_state(x,y))
-            # point to the left
-            elif x<game.x-60:
-                state.append(dir_l and game.get_state(x,y))
-            elif x<=game.x+50 and x>=game.x-60:
-                state.append(dir_u and game.get_state(x,y))
-            else:
-                state.append(game.get_state(x,y))
+        # state = [
+        #     # Move direction
+        #     dir_l,
+        #     dir_r,
+        #     dir_u
+        #     # obstacle coordinate
+        #     ]
 
-        return np.array(state, dtype=int)
+
+        # return np.array(state, dtype=int)
+        return game.state
 
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done)) # popleft if MAX_MEMORY is reached
