@@ -8,6 +8,8 @@ from collections import deque
 from PIL import Image
 import cv2
 from io import BytesIO
+import tensorflow as tf
+import torch
 
 pygame.init()
 font1 = pygame.font.Font('freesansbold.ttf', 32)
@@ -91,7 +93,11 @@ class PlayerCarAI():
 
         # surroundings movement
         self.movement_in_y=0
-        self.state=np.zeros(4096)
+        self.state=torch.zeros([0])
+        self.state_np=np.array([])
+        self.calls=0
+        self.stacked_frames=4
+        self.list_1=[]
 
     def reset(self):
         self.__init__()
@@ -120,22 +126,56 @@ class PlayerCarAI():
            self.x = right_x_limit
 
     
-    def player_step(self,action):
+    def player_step(self,action=[0,0,0]):
+        self.calls+=1
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
         
-        sub = WIN.subsurface(self.rect)
-        self.state= pygame.image.tostring(sub, 'RGB')
-        self.state=pygame.image.fromstring(self.state,(right_x_limit-left_x_limit+70,HEIGHT),'RGB')
-        self.state=pygame.surfarray.array3d(self.state)
+        if self.calls>4:
+            print("Deleted")
+            self.list_1=self.list_1[1:]
+
+
+        frame = WIN.subsurface(self.rect)
+        frame= pygame.image.tostring(frame, 'RGB')
+        frame=pygame.image.fromstring(frame,(right_x_limit-left_x_limit+70,HEIGHT),'RGB')
+        frame=pygame.surfarray.array3d(frame)
+        frame=cv2.resize(frame, (64,64)).reshape(3,64,64)
+        #print(frame.shape,",,,,",type(frame))
+        self.list_1.append(frame)
+        self.state_np=np.array(self.list_1)
+
+        #print("Numpy shape:---->",self.state_np.shape)
+        self.state=torch.from_numpy(self.state_np)
+        print("****************************",self.state.shape)
+
+
+        if self.calls<self.stacked_frames:
+            indx=np.random.randint(0,3)
+            action=[0,0,0]
+            action[indx]=1
+            self.direction=action
+            if action[1]==1:
+                self.movement(left=True)
+            elif action[2]==1:
+                self.movement(right=True)
+
+            # keep increasing speed
+            self.move_forward()
+            self.update_ui()
+            return 0, self.game_over,self.score
+
+        
+
         #pygame.image.save(sub,"State/state.png")
-        self.state=cv2.cvtColor(self.state, cv2.COLOR_BGR2GRAY)
+        #self.state=cv2.cvtColor(self.state, cv2.COLOR_BGR2GRAY)
         #print(self.state.shape)
-        self.state=cv2.resize(self.state, (64,64))
-        self.state=self.state.flatten()/255
-        #print(self.state.shape)
+        
+        # self.state=np.expand_dims(self.state, axis=0)
+        # self.state=self.state.flatten()/255
+        # print(self.state.shape)
 
         self.direction=action
         if action[1]==1:
