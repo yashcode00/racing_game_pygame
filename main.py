@@ -1,3 +1,4 @@
+from inspect import stack
 import pygame
 import time
 import math
@@ -5,6 +6,11 @@ import random
 import os
 import numpy as np
 from collections import deque
+from PIL import Image
+import cv2
+from io import BytesIO
+import tensorflow as tf
+import torch
 
 pygame.init()
 font1 = pygame.font.Font('freesansbold.ttf', 32)
@@ -12,7 +18,11 @@ pygame.mixer.init()
 MAX_MEMORY = 100_000
 
 from pygame.constants import HIDDEN
-from utils import scale_image, blit_rotate_center
+
+def scale_image(img, factor):
+    size = round(img.get_width() * factor), round(img.get_height() * factor)
+    return pygame.transform.scale(img, size)
+
 
 all_vehicles=os.listdir('images')
 for val in ['crash.png', 'grass.jpg', 'main_agent.png', 'main_agent2.png','track.png','Thumbs.db','speedometer.png']:
@@ -55,8 +65,8 @@ class PlayerCarAI():
         self.score=0
         self.game_over=False
         self.direction=[0,0,0]
-        self.pts=[(564.1666666666666, 479.0), (614, 492.3974596215561), (614, 529.0), (614, 579.0), (614, 629.0), (614, 665.6025403784439), (564.1666666666666, 679.0), (514.1666666666666, 665.6025403784439), (477.5641262882228, 629.0), (464.16666666666663, 579.0), (477.5641262882228, 529.0), (514.1666666666666, 492.39745962155615)]
-
+        self.rect = pygame.Rect(left_x_limit-10, 0, right_x_limit-left_x_limit+70,HEIGHT)
+       
         # 2 obstacles -> attributes start
         x_random=np.arange(left_x_limit,right_x_limit,50)
         # list1=x_random.tolist()
@@ -87,6 +97,12 @@ class PlayerCarAI():
 
     def reset(self):
         self.__init__()
+        frame = WIN.subsurface(self.rect)
+        frame= pygame.image.tostring(frame, 'RGB')
+        frame=pygame.image.fromstring(frame,(right_x_limit-left_x_limit+70,HEIGHT),'RGB')
+        frame=pygame.surfarray.array3d(frame)
+        return frame
+
 
     def draw_player(self,win):
         win.blit(self.img,(self.x,self.y))
@@ -111,49 +127,30 @@ class PlayerCarAI():
         if self.x > right_x_limit:
            self.x = right_x_limit
 
-    
-    def player_step(self,action):
-
-        # center = self.img.get_rect().center
-        center = (self.x + 20 ,self.y + 50)
-        angle = 0
-        radius = int(WIDTH/3)
-
-        pts = []
-        for i in range(int(360/30)):
-            vec = pygame.math.Vector2(0, -radius).rotate(angle)
-            pt_x, pt_y = center[0] + vec.x, center[1] + vec.y
-
-            if (pt_x > right_x_limit):
-                pt_x = right_x_limit
-            elif(pt_x < left_x_limit):
-                pt_x = left_x_limit
-            
-            pts.append((pt_x,pt_y))
-            angle += 30     
-            if angle >= 360:
-                angle = 0
-
-        #print("*******",len(pts))
-
-        # for pt_x,pt_y in pts:
-        #     pygame.draw.circle(WIN, (0, 0, 0), center, radius, 2)
-        #     pygame.draw.line(WIN, (0, 0, 255), center, (pt_x, pt_y), 2)
-        #     pygame.draw.line(WIN, (0, 0, 255), center, (center[0], center[1]-radius), 2)
-        #     pygame.display.update()
-            
-        # print(pts)
-        #self.pts = pts
+    def step(self,action):
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
 
+        frame = WIN.subsurface(self.rect)
+        frame= pygame.image.tostring(frame, 'RGB')
+        frame=pygame.image.fromstring(frame,(right_x_limit-left_x_limit+70,HEIGHT),'RGB')
+        frame=pygame.surfarray.array3d(frame)
+
+        #pygame.image.save(sub,"State/state.png")
+        #self.state=cv2.cvtColor(self.state, cv2.COLOR_BGR2GRAY)
+        #print(self.state.shape)
+        
+        # self.state=np.expand_dims(self.state, axis=0)
+        # self.state=self.state.flatten()/255
+        # print(self.state.shape)
+
         self.direction=action
-        if action[1]:
+        if action==1:
             self.movement(left=True)
-        elif action[2]:
+        elif action==2:
             self.movement(right=True)
 
         # keep increasing speed
@@ -173,7 +170,7 @@ class PlayerCarAI():
         self.score=self.dodged
 
         #print("Reward: ",reward,",Score: ",self.score,",Game_Over: ",self.game_over)
-        return reward, self.game_over,self.score
+        return frame,reward, self.game_over,self.score
 
 
     # obstacles methods start->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -206,7 +203,6 @@ class PlayerCarAI():
             #print(self.x,left_x_limit,right_x_limit-self.width)
             self.dodged = self.dodged + 2
             self.image1 = scale_image(pygame.image.load("images/"+all_vehicles[self.vehicle_number[0]]), 0.55)
-            self.rewards.append(10)
             flag=1
 
         # check boundary (block) for obstacle 2
@@ -219,35 +215,17 @@ class PlayerCarAI():
             #print(self.x,left_x_limit,right_x_limit-self.width)
             self.dodged = self.dodged + 2
             self.image2 = scale_image(pygame.image.load("images/"+all_vehicles[self.vehicle_number[1]]), 0.55)
-            self.rewards.append(10)
             flag=1
             
         if(flag==0):
             self.rewards.append(0)
+        else:
+            self.rewards.append(10)
             
 
     def draw(self,win):
         win.blit(self.image1,(self.x1,self.y1))
         win.blit(self.image2,(self.x2,self.y2))
-
-    def get_state(self,x,y):
-        obstacle1_mask = pygame.mask.from_surface(self.image1)
-        offset1 = (int(self.x1 - x), int(self.y1 - y))
-
-        obstacle2_mask = pygame.mask.from_surface(self.image2)
-        offset2 = (int(self.x2 - x), int(self.y2 - y))
-        
-        # mask of player car
-        mask=pygame.mask.from_surface(self.img)
-
-        # now finding point of intersection
-        poi1 = mask.overlap(obstacle1_mask, offset1)
-        poi2 = mask.overlap(obstacle2_mask, offset2)
-
-        if poi1!=None or poi2!=None:
-            return True
-        
-        return False
 
     def collison(self):
         obstacle1_mask = pygame.mask.from_surface(self.image1)
@@ -263,9 +241,9 @@ class PlayerCarAI():
         poi1 = mask.overlap(obstacle1_mask, offset1)
         poi2 = mask.overlap(obstacle2_mask, offset2)
         if poi1 != None:
-            sound=pygame.mixer.Sound("sounds/car-crash-sound-eefect.mp3")
-            sound.set_volume(0.5)
-            sound.play()
+            # sound=pygame.mixer.Sound("sounds/car-crash-sound-eefect.mp3")
+            # sound.set_volume(0.1)
+            # sound.play()
             text = font1.render('You crashed!',True,(0,0,0))
             text_width = text.get_width()
             text_height = text.get_height()
@@ -273,15 +251,15 @@ class PlayerCarAI():
             y = int(HEIGHT/2-text_height/2)
             WIN.blit(text,(x,y))
             WIN.blit(CRASH,(self.x-100,self.y-100))
-            pygame.display.update()
-            time.sleep(1)
+            #pygame.display.update()
+            #time.sleep(1)
             return True
 
         # checking collision for second car
         if poi2 != None:
-            sound=pygame.mixer.Sound("sounds/car-crash-sound-eefect.mp3")
-            sound.set_volume(0.5)
-            sound.play()
+            # sound=pygame.mixer.Sound("sounds/car-crash-sound-eefect.mp3")
+            # sound.set_volume(0.1)
+            # sound.play()
             text = font1.render('You crashed!',True,(0,0,0))
             text_width = text.get_width()
             text_height = text.get_height()
@@ -289,8 +267,8 @@ class PlayerCarAI():
             y = int(HEIGHT/2-text_height/2)
             WIN.blit(text,(x,y))
             WIN.blit(CRASH,(self.x-100,self.y-100))
-            pygame.display.update()
-            time.sleep(1)
+            # pygame.display.update()
+            # time.sleep(1)
             return True
         
         return False
