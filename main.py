@@ -134,7 +134,7 @@ class PlayerCarAI():
                 quit()
         
         if self.calls>4:
-            print("Deleted")
+            # print("Deleted")
             self.list_1=self.list_1[1:]
 
 
@@ -149,7 +149,7 @@ class PlayerCarAI():
 
         #print("Numpy shape:---->",self.state_np.shape)
         self.state=torch.from_numpy(self.state_np)
-        print("****************************",self.state.shape)
+        # print("****************************",self.state.shape)
 
 
         if self.calls<self.stacked_frames:
